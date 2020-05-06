@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="InowasFlopyAdapter",
-    version="1.0.0a5",
+    version="1.0.0a7",
     author="Ralf Junghanns",
     author_email="ralf.junghanns@gmail.com",
     description="A FLOPY wrapper for the INOWAS-platform",
@@ -15,7 +15,9 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'flopy==3.3.0',
-        'numpy>=1.9'
+        'numpy>=1.9',
+        'scipy>=1.4',
+        'sklearn>=0.0'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
