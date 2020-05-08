@@ -13,6 +13,10 @@ class InvalidArgumentException(Exception):
     pass
 
 
+class InvalidModelUnitException(Exception):
+    pass
+
+
 class InowasModflowReadAdapter:
     _ws = None
     _mf = None
@@ -155,3 +159,72 @@ class InowasModflowReadAdapter:
         # noinspection PyTypeChecker
         polygon = geojson.Polygon(mpoly_coordinates_wgs84['coordinates'])
         return polygon
+
+    def model_grid_size(self):
+        if not isinstance(self._mf, fp.modflow.Modflow):
+            raise FileNotFoundError('Model not loaded.')
+
+        nrow, ncol, nlay, nper = self._mf.get_nrow_ncol_nlay_nper()
+
+        return {
+            'n_x': ncol,
+            'n_y': nrow
+        }
+
+    def model_stress_periods(self, start_datetime=None):
+        if not isinstance(self._mf, fp.modflow.Modflow):
+            raise FileNotFoundError('Model not loaded.')
+
+        if not isinstance(self._mf.dis, fp.modflow.ModflowDis):
+            raise FileNotFoundError('Dis-Package not loaded.')
+
+        time_unit = self._mf.dis.itmuni
+
+        if time_unit != 4:
+            raise InvalidModelUnitException('The time unit is required to be in days (4)')
+
+        from datetime import datetime, timedelta
+        mt = self._mf.modeltime
+
+        if start_datetime is None:
+            start_datetime = datetime.strptime(mt.start_datetime, '%m-%d-%Y')
+
+        if not isinstance(start_datetime, datetime):
+            raise InvalidModelUnitException('DateTime has to be None or instance od datetime.')
+
+        end_datetime = start_datetime + timedelta(days=sum(mt.perlen.tolist()))
+
+        stressperiods = []
+        for sp_idx in range(0, mt.nper):
+            start_date_time = start_datetime + timedelta(days=sum(mt.perlen.tolist()[0:sp_idx]))
+            stressperiods.append({
+                'start_date_time': str(start_date_time.date()),
+                'nstp': mt.nstp.tolist()[sp_idx],
+                'tsmult': mt.tsmult.tolist()[sp_idx],
+                'steady': mt.steady_state.array[sp_idx]
+            })
+
+        return {
+            'start_date_time': str(start_datetime.date()),
+            'end_date_time': str(end_datetime.date()),
+            'time_unit': time_unit,
+            'stressperiods': stressperiods
+        }
+
+    def model_length_unit(self):
+        if not isinstance(self._mf, fp.modflow.Modflow):
+            raise FileNotFoundError('Model not loaded')
+
+        if not isinstance(self._mf.dis, fp.modflow.ModflowDis):
+            raise FileNotFoundError('Dis-Package not loaded.')
+
+        return self._mf.dis.lenuni
+
+    def model_time_unit(self):
+        if not isinstance(self._mf, fp.modflow.Modflow):
+            raise FileNotFoundError('Model not loaded')
+
+        if not isinstance(self._mf.dis, fp.modflow.ModflowDis):
+            raise FileNotFoundError('Dis-Package not loaded.')
+
+        return self._mf.dis.itmuni

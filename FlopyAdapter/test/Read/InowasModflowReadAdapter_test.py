@@ -49,6 +49,58 @@ class InowasModflowReadAdapterTest(unittest.TestCase):
         self.assertEqual(len(geometry["coordinates"][0]), 520)
         self.assertEqual(geometry["coordinates"][0][0], [-34.874832, -8.073986])
 
+    def it_returns_model_gid_size_test(self):
+        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
+        self.assertIsInstance(instance, InowasModflowReadAdapter)
+        grid_size = instance.model_grid_size()
+        self.assertEqual(grid_size, {
+            'n_x': 227,
+            'n_y': 221,
+        })
+
+    def it_returns_model_stressperiods_test(self):
+        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
+        self.assertIsInstance(instance, InowasModflowReadAdapter)
+        stress_periods = instance.model_stress_periods()
+        expected = {
+            'start_date_time': '1970-01-01',
+            'end_date_time': '1970-02-06',
+            'time_unit': 4,
+            'stressperiods': [
+                {
+                    'start_date_time': '1970-01-01',
+                    'nstp': 1,
+                    'tsmult': 1.0,
+                    'steady': True,
+                },
+                {
+                    'start_date_time': '1970-01-02',
+                    'nstp': 5,
+                    'tsmult': 1.0,
+                    'steady': False,
+                },
+                {
+                    'start_date_time': '1970-01-12',
+                    'nstp': 10,
+                    'tsmult': 1.5,
+                    'steady': False,
+                }
+            ]
+        }
+        self.assertEqual(stress_periods, expected)
+
+    def it_returns_model_length_unit_test(self):
+        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
+        self.assertIsInstance(instance, InowasModflowReadAdapter)
+        length_unit = instance.model_length_unit()
+        self.assertEqual(length_unit, 2)
+
+    def it_returns_model_time_unit_test(self):
+        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
+        self.assertIsInstance(instance, InowasModflowReadAdapter)
+        time_unit = instance.model_time_unit()
+        self.assertEqual(time_unit, 4)
+
 
 if __name__ == "__main__":
     unittest.main()
