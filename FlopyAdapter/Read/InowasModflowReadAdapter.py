@@ -193,8 +193,11 @@ class InowasModflowReadAdapter:
                     'name': 'Well ' + str(idx + 1),
                     'geometry': geojson.Point(center),
                     'layers': [l],
-                    'sp_values': sp_values
+                    'sp_values': sp_values,
+                    'cells': [[c, r]]
                 })
+
+            print(wel_boundaries)
 
             return wel_boundaries
 
