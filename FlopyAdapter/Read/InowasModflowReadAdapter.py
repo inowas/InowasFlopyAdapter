@@ -197,8 +197,6 @@ class InowasModflowReadAdapter:
                     'cells': [[c, r]]
                 })
 
-            print(wel_boundaries)
-
             return wel_boundaries
 
         except AttributeError:
