@@ -101,6 +101,69 @@ class InowasModflowReadAdapterTest(unittest.TestCase):
         time_unit = instance.model_time_unit()
         self.assertEqual(time_unit, 4)
 
+    def it_returns_wel_boundaries_of_example_1_test(self):
+        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
+        self.assertIsInstance(instance, InowasModflowReadAdapter)
+        wel_boundaries = instance.wel_boundaries(279972.0566, 9099724.9436, 31985, -15.5)
+        self.assertEqual(len(wel_boundaries), 93)
+        self.assertEqual(wel_boundaries[0], {
+            'type': 'wel',
+            'name': 'Well 1',
+            'geometry': {"coordinates": [-34.879086, -8.084038], "type": "Point"},
+            'layers': [0],
+            'sp_values': [-2039.0, -2039.0, -2039.0]
+        })
+
+    def it_returns_wel_boundaries_of_example_2_test(self):
+        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_2')
+        self.assertIsInstance(instance, InowasModflowReadAdapter)
+        wel_boundaries = instance.wel_boundaries(0, 0, 4326, 0)
+        self.assertEqual(len(wel_boundaries), 6)
+        self.assertEqual(wel_boundaries, [
+            {
+                'type': 'wel',
+                'name': 'Well 1',
+                'geometry': {"coordinates": [0.013454, 0.040657], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 2',
+                'geometry': {"coordinates": [0.022429, 0.040658], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 3',
+                'geometry': {"coordinates": [0.058327, 0.040659], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -10000.0, -10000.0]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 4',
+                'geometry': {"coordinates": [0.085252, 0.04066], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 5',
+                'geometry': {"coordinates": [0.013454, 0.022587], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 6',
+                'geometry': {"coordinates": [0.040379, 0.013553], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0]
+            }
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()

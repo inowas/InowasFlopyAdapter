@@ -6,6 +6,7 @@ import os
 import rasterio.features
 import sys
 import utm
+from flopy.modflow import ModflowWel
 from pyproj import Transformer
 
 
@@ -95,7 +96,14 @@ class InowasModflowReadAdapter:
         latitude, longitude = utm.to_latlon(easting, northing, zone_number, zone_letter)
         return longitude, latitude
 
-    def model_geometry(self, xll=None, yll=None, origin_epsg=4326, angrot=None, layer=0):
+    @staticmethod
+    def get_cell_center(grid, c):
+        xcz = grid.xcellcenters
+        ycz = grid.ycellcenters
+        nx, ny = int(c[0]), int(c[1])
+        return [xcz[ny][nx], ycz[ny][nx]]
+
+    def model_grid(self, xll=None, yll=None, origin_epsg=4326, angrot=None):
         if not isinstance(self._mf, fp.modflow.Modflow):
             raise FileNotFoundError('Model not loaded')
 
@@ -116,7 +124,7 @@ class InowasModflowReadAdapter:
 
         # new model grid
         from flopy.discretization import StructuredGrid
-        nmg = StructuredGrid(
+        return StructuredGrid(
             mg.delc,
             mg.delr,
             mg.top,
@@ -126,31 +134,23 @@ class InowasModflowReadAdapter:
             xoff=xoff,
             yoff=yoff,
             angrot=angrot if angrot is not None else mg.angrot
-        )
+        ), zone_number, zone_letter
 
-        iBound = self.get_ibound()
+    def model_geometry(self, xll=None, yll=None, origin_epsg=4326, angrot=None, layer=0):
+        nmg, zone_number, zone_letter = self.model_grid(xll, yll, origin_epsg, angrot)
 
-        if layer >= len(iBound):
-            raise Exception('Layer with key ' + str(layer) + 'not found. Max: ' + str(len(iBound)))
+        i_bound = self.get_ibound()
+        if layer >= len(i_bound):
+            raise Exception('Layer with key ' + str(layer) + 'not found. Max: ' + str(len(i_bound)))
 
-        layer = iBound[layer]
-
+        layer = i_bound[layer]
         mask = np.array(np.ma.masked_values(layer, 1, shrink=False), dtype=bool)
         mpoly_cells = []
         for vec in rasterio.features.shapes(layer, mask=mask):
             mpoly_cells.append(geojson.Polygon(vec[0]["coordinates"]))
 
         mpoly_cells = mpoly_cells[0]
-
-        def get_cell_centers(grid, c):
-
-            xcz = grid.xcellcenters
-            ycz = grid.ycellcenters
-
-            nx, ny = int(c[0]), int(c[1])
-            return [xcz[ny][nx], ycz[ny][nx]]
-
-        mpoly_coordinates_utm = geojson.utils.map_tuples(lambda c: get_cell_centers(nmg, c), mpoly_cells)
+        mpoly_coordinates_utm = geojson.utils.map_tuples(lambda c: self.get_cell_center(nmg, c), mpoly_cells)
 
         mpoly_coordinates_wgs84 = geojson.utils.map_tuples(
             lambda c: self.utmToWgs82XY(c[0], c[1], zone_number, zone_letter), mpoly_coordinates_utm
@@ -159,6 +159,47 @@ class InowasModflowReadAdapter:
         # noinspection PyTypeChecker
         polygon = geojson.Polygon(mpoly_coordinates_wgs84['coordinates'])
         return polygon
+
+    def wel_boundaries(self, xll=None, yll=None, origin_epsg=4326, angrot=None):
+        default = 0
+        mg, zone_number, zone_letter = self.model_grid(xll, yll, origin_epsg, angrot)
+        try:
+            wel: ModflowWel = self._mf.wel
+            flux = np.array(wel.stress_period_data.array["flux"])
+            flux_cells = np.argwhere(~np.isnan(flux))
+
+            well_cells = []
+            for cell in flux_cells:
+                sp, l, r, c = cell
+                if [l, r, c] not in well_cells:
+                    well_cells.append([l, r, c])
+
+            wel_boundaries = []
+            for idx, cell in enumerate(well_cells):
+                l, r, c = cell
+                center = self.get_cell_center(mg, [c, r])
+                center = self.utmToWgs82XY(center[0], center[1], zone_number, zone_letter)
+                sp_values = []
+                for spd in flux:
+                    value = spd[l][r][c]
+                    if ~np.isnan(value):
+                        sp_values.append(value)
+                        continue
+
+                    sp_values.append(default)
+
+                wel_boundaries.append({
+                    'type': 'wel',
+                    'name': 'Well ' + str(idx + 1),
+                    'geometry': geojson.Point(center),
+                    'layers': [l],
+                    'sp_values': sp_values
+                })
+
+            return wel_boundaries
+
+        except AttributeError:
+            pass
 
     def model_grid_size(self):
         if not isinstance(self._mf, fp.modflow.Modflow):
