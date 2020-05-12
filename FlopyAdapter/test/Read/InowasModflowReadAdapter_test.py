@@ -21,6 +21,22 @@ class InowasModflowReadAdapterTest(unittest.TestCase):
         instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
         self.assertIsInstance(instance, InowasModflowReadAdapter)
 
+    def it_loads_the_model_correctly_with_crs_test(self):
+        instance = InowasModflowReadAdapter.load_with_crs(
+            './FlopyAdapter/test/Read/data/test_example_1',
+            279972.0566, 9099724.9436, 31985, -15.5
+        )
+
+        self.assertIsInstance(instance, InowasModflowReadAdapter)
+
+        from flopy.discretization import StructuredGrid
+        mg = instance.modelgrid
+        self.assertIsInstance(mg, StructuredGrid)
+        self.assertEqual(mg.epsg, '32725')
+        self.assertEqual(round(mg.xoffset), 279972)
+        self.assertEqual(round(mg.yoffset), 9099725)
+        self.assertEqual(mg.angrot, -15.5)
+
     def it_converts_wgs84_to_utm_correctly_test(self):
         lat = 50.966319
         long = 13.923273
@@ -37,17 +53,15 @@ class InowasModflowReadAdapterTest(unittest.TestCase):
         self.assertEqual(round(lat, 5), 50.96632)
 
     def it_returns_a_model_geometry_correctly_test(self):
-        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
-        self.assertIsInstance(instance, InowasModflowReadAdapter)
-        geometry = instance.model_geometry(279972.0566, 9099724.9436, 31985, 0, 0)
-        self.assertEqual(geometry["type"], 'Polygon')
-        self.assertEqual(len(geometry["coordinates"][0]), 520)
-        self.assertEqual(geometry["coordinates"][0][0], [-34.896872, -8.04386])
+        instance = InowasModflowReadAdapter.load_with_crs(
+            './FlopyAdapter/test/Read/data/test_example_1',
+            279972.0566, 9099724.9436, 31985, -15.5
+        )
 
-        geometry = instance.model_geometry(279972.0566, 9099724.9436, 31985, -15.5, 0)
+        geometry = instance.model_geometry(4326, 0)
         self.assertEqual(geometry["type"], 'Polygon')
         self.assertEqual(len(geometry["coordinates"][0]), 520)
-        self.assertEqual(geometry["coordinates"][0][0], [-34.874832, -8.073986])
+        self.assertEqual(geometry["coordinates"][0][0], [-34.87483, -8.073986])
 
     def it_returns_model_gid_size_test(self):
         instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
@@ -102,38 +116,78 @@ class InowasModflowReadAdapterTest(unittest.TestCase):
         self.assertEqual(time_unit, 4)
 
     def it_returns_wel_boundaries_of_example_1_test(self):
-        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
+        instance = InowasModflowReadAdapter.load_with_crs(
+            './FlopyAdapter/test/Read/data/test_example_1',
+            279972.0566, 9099724.9436, 31985, -15.5
+        )
         self.assertIsInstance(instance, InowasModflowReadAdapter)
-        wel_boundaries = instance.wel_boundaries(279972.0566, 9099724.9436, 31985, -15.5)
+        wel_boundaries = instance.wel_boundaries(target_epsg=4326)
         self.assertEqual(len(wel_boundaries), 93)
         self.assertEqual(wel_boundaries[0], {
             'type': 'wel',
             'name': 'Well 1',
-            'geometry': {"coordinates": [-34.879086, -8.084038], "type": "Point"},
+            'geometry': {"coordinates": [-34.879084, -8.084038], "type": "Point"},
             'layers': [0],
             'sp_values': [-2039.0, -2039.0, -2039.0],
             'cells': [[217, 31]],
         })
 
     def it_returns_wel_boundaries_of_example_2_test(self):
-        self.maxDiff = None
-        instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_2')
+        instance = InowasModflowReadAdapter.load_with_crs(
+            './FlopyAdapter/test/Read/data/test_example_2',
+            0, 0, 4326, 0
+        )
         self.assertIsInstance(instance, InowasModflowReadAdapter)
-        wel_boundaries = instance.wel_boundaries(0, 0, 4326, 0)
+        wel_boundaries = instance.wel_boundaries(target_epsg=4326)
         self.assertEqual(len(wel_boundaries), 6)
         self.assertEqual(wel_boundaries, [
-            {'type': 'wel', 'name': 'Well 1', 'geometry': {"coordinates": [0.013454, 0.040657], "type": "Point"},
-             'layers': [0], 'sp_values': [0, -5000.0, -5000.0], 'cells': [[1, 1]]},
-            {'type': 'wel', 'name': 'Well 2', 'geometry': {"coordinates": [0.022429, 0.040658], "type": "Point"},
-             'layers': [0], 'sp_values': [0, -5000.0, -5000.0], 'cells': [[2, 1]]},
-            {'type': 'wel', 'name': 'Well 3', 'geometry': {"coordinates": [0.058327, 0.040659], "type": "Point"},
-             'layers': [0], 'sp_values': [0, -10000.0, -10000.0], 'cells': [[6, 1]]},
-            {'type': 'wel', 'name': 'Well 4', 'geometry': {"coordinates": [0.085252, 0.04066], "type": "Point"},
-             'layers': [0], 'sp_values': [0, -5000.0, -5000.0], 'cells': [[9, 1]]},
-            {'type': 'wel', 'name': 'Well 5', 'geometry': {"coordinates": [0.013454, 0.022587], "type": "Point"},
-             'layers': [0], 'sp_values': [0, -5000.0, -5000.0], 'cells': [[1, 3]]},
-            {'type': 'wel', 'name': 'Well 6', 'geometry': {"coordinates": [0.040379, 0.013553], "type": "Point"},
-             'layers': [0], 'sp_values': [0, -5000.0, -5000.0], 'cells': [[4, 4]]}])
+            {
+                'type': 'wel',
+                'name': 'Well 1',
+                'geometry': {"coordinates": [0.013461, 0.040657], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0],
+                'cells': [[1, 1]]
+            }, {
+                'type': 'wel',
+                'name': 'Well 2',
+                'geometry': {"coordinates": [0.022435, 0.040658], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0],
+                'cells': [[2, 1]]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 3',
+                'geometry': {"coordinates": [0.058334, 0.040659], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -10000.0, -10000.0],
+                'cells': [[6, 1]]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 4',
+                'geometry': {"coordinates": [0.085259, 0.04066], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0],
+                'cells': [[9, 1]]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 5',
+                'geometry': {"coordinates": [0.013461, 0.022587], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0],
+                'cells': [[1, 3]]
+            },
+            {
+                'type': 'wel',
+                'name': 'Well 6',
+                'geometry': {"coordinates": [0.040385, 0.013553], "type": "Point"},
+                'layers': [0],
+                'sp_values': [0, -5000.0, -5000.0],
+                'cells': [[4, 4]]
+            }])
 
 
 if __name__ == "__main__":

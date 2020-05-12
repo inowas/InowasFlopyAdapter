@@ -6,8 +6,10 @@ import os
 import rasterio.features
 import sys
 import utm
-from flopy.modflow import ModflowWel
+from flopy.discretization import StructuredGrid
+from flopy.modflow import ModflowWel, ModflowChd
 from pyproj import Transformer
+import FlopyAdapter.MfPackages as fpa
 
 
 class InvalidArgumentException(Exception):
@@ -65,8 +67,58 @@ class InowasModflowReadAdapter:
             f.close()
             raise
 
+    @staticmethod
+    def load_with_crs(path, xll, yll, epsg=4326, rot=None):
+        try:
+            instance = InowasModflowReadAdapter.load(path)
+
+            # Transform to UTM with WGS84 as intermediate
+            tf = Transformer.from_crs(epsg, 4326, always_xy=True, skip_equivalent=True)
+            wgs84_xll, wgs84_yll = tf.transform(xll, yll)
+
+            # Calculate the UTM-EPSG to use with pyproj
+            _, _, zone_number, _ = utm.from_latlon(wgs84_yll, wgs84_xll)
+            utm_epsg = f"326{zone_number:02d}" if wgs84_yll >= 0 else f"327{zone_number:02d}"
+
+            tf = Transformer.from_crs(4326, int(utm_epsg), always_xy=True, skip_equivalent=True)
+            xoff, yoff = tf.transform(wgs84_xll, wgs84_yll)
+
+            modelgrid = instance._mf.modelgrid
+            updated_modelgrid = StructuredGrid(
+                modelgrid.delc,
+                modelgrid.delr,
+                modelgrid.top,
+                modelgrid.botm,
+                modelgrid.idomain,
+                modelgrid.lenuni,
+                epsg=utm_epsg,
+                xoff=xoff,
+                yoff=yoff,
+                angrot=rot if not None else modelgrid.angrot
+            )
+
+            instance._mf.modelgrid = updated_modelgrid
+            return instance
+
+        except:
+            raise
+
     def __init__(self):
         pass
+
+    @property
+    def modelgrid(self):
+        if not isinstance(self._mf, fp.modflow.Modflow):
+            raise FileNotFoundError('Model not loaded')
+
+        return self._mf.modelgrid
+
+    @property
+    def modeltime(self):
+        if not isinstance(self._mf, fp.modflow.Modflow):
+            raise FileNotFoundError('Model not loaded')
+
+        return self._mf.modeltime
 
     def get_ibound(self):
         if not isinstance(self._mf, fp.modflow.Modflow):
@@ -97,47 +149,17 @@ class InowasModflowReadAdapter:
         return longitude, latitude
 
     @staticmethod
-    def get_cell_center(grid, c):
+    def transform(tf: Transformer, cell):
+        return tf.transform(cell[0], cell[1])
+
+    def get_cell_center(self, c):
+        grid: StructuredGrid = self.modelgrid
         xcz = grid.xcellcenters
         ycz = grid.ycellcenters
         nx, ny = int(c[0]), int(c[1])
         return [xcz[ny][nx], ycz[ny][nx]]
 
-    def model_grid(self, xll=None, yll=None, origin_epsg=4326, angrot=None):
-        if not isinstance(self._mf, fp.modflow.Modflow):
-            raise FileNotFoundError('Model not loaded')
-
-        if xll is None:
-            raise InvalidArgumentException('xll not set')
-
-        if yll is None:
-            raise InvalidArgumentException('yll not set')
-
-        if origin_epsg != 4326:
-            tf = Transformer.from_crs(origin_epsg, 4326, always_xy=True)
-            xll, yll = tf.transform(xll, yll)
-
-        xoff, yoff, zone_number, zone_letter = self.wgs82ToUtm(xll, yll)
-
-        # We should create a new grid with updated coordinate-references
-        mg = self._mf.modelgrid
-
-        # new model grid
-        from flopy.discretization import StructuredGrid
-        return StructuredGrid(
-            mg.delc,
-            mg.delr,
-            mg.top,
-            mg.botm,
-            mg.idomain,
-            mg.lenuni,
-            xoff=xoff,
-            yoff=yoff,
-            angrot=angrot if angrot is not None else mg.angrot
-        ), zone_number, zone_letter
-
-    def model_geometry(self, xll=None, yll=None, origin_epsg=4326, angrot=None, layer=0):
-        nmg, zone_number, zone_letter = self.model_grid(xll, yll, origin_epsg, angrot)
+    def model_geometry(self, target_epsg=4326, layer=0):
 
         i_bound = self.get_ibound()
         if layer >= len(i_bound):
@@ -150,57 +172,17 @@ class InowasModflowReadAdapter:
             mpoly_cells.append(geojson.Polygon(vec[0]["coordinates"]))
 
         mpoly_cells = mpoly_cells[0]
-        mpoly_coordinates_utm = geojson.utils.map_tuples(lambda c: self.get_cell_center(nmg, c), mpoly_cells)
+        mpoly_coordinates_utm = geojson.utils.map_tuples(lambda c: self.get_cell_center(c), mpoly_cells)
 
-        mpoly_coordinates_wgs84 = geojson.utils.map_tuples(
-            lambda c: self.utmToWgs82XY(c[0], c[1], zone_number, zone_letter), mpoly_coordinates_utm
-        )
+        tf = Transformer.from_crs(int(self.modelgrid.epsg), int(target_epsg), always_xy=True, skip_equivalent=True)
+        mpoly_coordinates_target = geojson.utils.map_tuples(lambda c: self.transform(tf, c), mpoly_coordinates_utm)
 
         # noinspection PyTypeChecker
-        polygon = geojson.Polygon(mpoly_coordinates_wgs84['coordinates'])
+        polygon = geojson.Polygon(mpoly_coordinates_target['coordinates'])
         return polygon
 
-    def wel_boundaries(self, xll=None, yll=None, origin_epsg=4326, angrot=None):
-        default = 0
-        mg, zone_number, zone_letter = self.model_grid(xll, yll, origin_epsg, angrot)
-        try:
-            wel: ModflowWel = self._mf.wel
-            flux = np.array(wel.stress_period_data.array["flux"])
-            flux_cells = np.argwhere(~np.isnan(flux))
-
-            well_cells = []
-            for cell in flux_cells:
-                sp, l, r, c = cell
-                if [l, r, c] not in well_cells:
-                    well_cells.append([l, r, c])
-
-            wel_boundaries = []
-            for idx, cell in enumerate(well_cells):
-                l, r, c = cell
-                center = self.get_cell_center(mg, [c, r])
-                center = self.utmToWgs82XY(center[0], center[1], zone_number, zone_letter)
-                sp_values = []
-                for spd in flux:
-                    value = spd[l][r][c]
-                    if ~np.isnan(value):
-                        sp_values.append(value)
-                        continue
-
-                    sp_values.append(default)
-
-                wel_boundaries.append({
-                    'type': 'wel',
-                    'name': 'Well ' + str(idx + 1),
-                    'geometry': geojson.Point(center),
-                    'layers': [l],
-                    'sp_values': sp_values,
-                    'cells': [[c, r]]
-                })
-
-            return wel_boundaries
-
-        except AttributeError:
-            pass
+    def wel_boundaries(self, target_epsg=4326):
+        return fpa.WelAdapter.generate_import(self._mf, target_epsg=target_epsg)
 
     def model_grid_size(self):
         if not isinstance(self._mf, fp.modflow.Modflow):

@@ -1,4 +1,6 @@
 import flopy.modflow as mf
+import geojson
+import numpy as np
 
 
 class WelAdapter:
@@ -72,3 +74,59 @@ class WelAdapter:
             "options": package.options if package.options else None
         }
         return content
+
+    @staticmethod
+    def generate_import(model: mf.Modflow, target_epsg=4326):
+        if not isinstance(model, mf.Modflow):
+            raise FileNotFoundError('Model not loaded')
+
+        def get_cell_center(grid, c):
+            xcz = grid.xcellcenters
+            ycz = grid.ycellcenters
+            nx, ny = int(c[0]), int(c[1])
+
+            return xcz[ny][nx], ycz[ny][nx]
+
+        default = 0
+        try:
+            wel: mf.ModflowWel = model.wel
+            flux = np.array(wel.stress_period_data.array["flux"])
+            flux_cells = np.argwhere(~np.isnan(flux))
+
+            well_cells = []
+            for cell in flux_cells:
+                sp, l, r, c = cell
+                if [l, r, c] not in well_cells:
+                    well_cells.append([l, r, c])
+
+            from pyproj import Transformer
+            tf = Transformer.from_crs(int(model.modelgrid.epsg), int(target_epsg), always_xy=True, skip_equivalent=True)
+
+            wel_boundaries = []
+            for idx, cell in enumerate(well_cells):
+                l, r, c = cell
+                center_x, center_y = get_cell_center(model.modelgrid, [c, r])
+                center = tf.transform(center_x, center_y)
+
+                sp_values = []
+                for spd in flux:
+                    value = spd[l][r][c]
+                    if ~np.isnan(value):
+                        sp_values.append(value)
+                        continue
+
+                    sp_values.append(default)
+
+                wel_boundaries.append({
+                    'type': 'wel',
+                    'name': 'Well ' + str(idx + 1),
+                    'geometry': geojson.Point(center),
+                    'layers': [l],
+                    'sp_values': sp_values,
+                    'cells': [[c, r]]
+                })
+
+            return wel_boundaries
+
+        except AttributeError:
+            return []
