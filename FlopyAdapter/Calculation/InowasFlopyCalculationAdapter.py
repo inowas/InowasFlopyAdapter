@@ -5,50 +5,13 @@ and the inowas-modflow-configuration format.
 Author: Ralf Junghanns
 EMail: ralf.junghanns@gmail.com
 """
+import FlopyAdapter.MfPackages as mf
+import FlopyAdapter.MtPackages as mt
+import FlopyAdapter.MpPackages as mp
+import FlopyAdapter.SwtPackages as swt
 
-from FlopyAdapter.MfPackages.BasAdapter import BasAdapter
-from FlopyAdapter.MfPackages.ChdAdapter import ChdAdapter
-from FlopyAdapter.MfPackages.DisAdapter import DisAdapter
-from FlopyAdapter.MfPackages.DrnAdapter import DrnAdapter
-from FlopyAdapter.MfPackages.FhbAdapter import FhbAdapter
-from FlopyAdapter.MfPackages.GhbAdapter import GhbAdapter
-from FlopyAdapter.MfPackages.HobAdapter import HobAdapter
-from FlopyAdapter.Statistics.HobStatistics import HobStatistics
-from FlopyAdapter.MfPackages.LpfAdapter import LpfAdapter
-from FlopyAdapter.MfPackages.MfAdapter import MfAdapter
-from FlopyAdapter.MfPackages.NwtAdapter import NwtAdapter
-from FlopyAdapter.MfPackages.OcAdapter import OcAdapter
-from FlopyAdapter.MfPackages.PcgAdapter import PcgAdapter
-from FlopyAdapter.MfPackages.RchAdapter import RchAdapter
-from FlopyAdapter.MfPackages.EvtAdapter import EvtAdapter
-from FlopyAdapter.MfPackages.RivAdapter import RivAdapter
-from FlopyAdapter.Read.ReadBudget import ReadBudget
-from FlopyAdapter.Read.ReadConcentration import ReadConcentration
-from FlopyAdapter.Read.ReadDrawdown import ReadDrawdown
-from FlopyAdapter.Read.ReadHead import ReadHead
-from FlopyAdapter.MfPackages.UpwAdapter import UpwAdapter
-from FlopyAdapter.MfPackages.WelAdapter import WelAdapter
-from FlopyAdapter.MfPackages.LmtAdapter import LmtAdapter
-
-from FlopyAdapter.MpPackages.MpAdapter import MpAdapter
-from FlopyAdapter.MpPackages.BasAdapter import BasAdapter
-from FlopyAdapter.MpPackages.SimAdapter import SimAdapter
-
-from FlopyAdapter.MtPackages.MtAdapter import MtAdapter
-from FlopyAdapter.MtPackages.AdvAdapter import AdvAdapter
-from FlopyAdapter.MtPackages.BtnAdapter import BtnAdapter
-from FlopyAdapter.MtPackages.DspAdapter import DspAdapter
-from FlopyAdapter.MtPackages.GcgAdapter import GcgAdapter
-from FlopyAdapter.MtPackages.LktAdapter import LktAdapter
-from FlopyAdapter.MtPackages.PhcAdapter import PhcAdapter
-from FlopyAdapter.MtPackages.RctAdapter import RctAdapter
-from FlopyAdapter.MtPackages.SftAdapter import SftAdapter
-from FlopyAdapter.MtPackages.SsmAdapter import SsmAdapter
-from FlopyAdapter.MtPackages.TobAdapter import TobAdapter
-from FlopyAdapter.MtPackages.UztAdapter import UztAdapter
-from FlopyAdapter.SwtPackages.SwtAdapter import SwtAdapter
-from FlopyAdapter.SwtPackages.VdfAdapter import VdfAdapter
-from FlopyAdapter.SwtPackages.VscAdapter import VscAdapter
+import FlopyAdapter.Statistics as stat
+import FlopyAdapter.Read as read
 
 
 class InowasFlopyCalculationAdapter:
@@ -181,7 +144,7 @@ class InowasFlopyCalculationAdapter:
         name = model.name
 
         print('Calculate hob-statistics for model %s' % name)
-        HobStatistics(model_ws, name).write_to_file()
+        stat.HobStatistics(model_ws, name).write_files()
 
     def check_model(self):
         if self._model is not None:
@@ -193,93 +156,93 @@ class InowasFlopyCalculationAdapter:
 
         # Modflow packages
         if name == 'mf':
-            self._model = MfAdapter(content).get_package()
+            self._model = mf.MfAdapter(content).get_package()
         if name == 'dis':
-            DisAdapter(content).get_package(self._model)
+            mf.DisAdapter(content).get_package(self._model)
         if name == 'drn':
-            DrnAdapter(content).get_package(self._model)
+            mf.DrnAdapter(content).get_package(self._model)
         if name == 'bas' or name == 'bas6':
-            BasAdapter(content).get_package(self._model)
+            mf.BasAdapter(content).get_package(self._model)
         if name == 'lpf':
-            LpfAdapter(content).get_package(self._model)
+            mf.LpfAdapter(content).get_package(self._model)
         if name == 'upw':
-            UpwAdapter(content).get_package(self._model)
+            mf.UpwAdapter(content).get_package(self._model)
         if name == 'pcg':
-            PcgAdapter(content).get_package(self._model)
+            mf.PcgAdapter(content).get_package(self._model)
         if name == 'nwt':
-            NwtAdapter(content).get_package(self._model)
+            mf.NwtAdapter(content).get_package(self._model)
         if name == 'oc':
-            OcAdapter(content).get_package(self._model)
+            mf.OcAdapter(content).get_package(self._model)
         if name == 'riv':
-            RivAdapter(content).get_package(self._model)
+            mf.RivAdapter(content).get_package(self._model)
         if name == 'wel':
-            WelAdapter(content).get_package(self._model)
+            mf.WelAdapter(content).get_package(self._model)
         if name == 'rch':
-            RchAdapter(content).get_package(self._model)
+            mf.RchAdapter(content).get_package(self._model)
         if name == 'evt':
-            EvtAdapter(content).get_package(self._model)
+            mf.EvtAdapter(content).get_package(self._model)
         if name == 'chd':
-            ChdAdapter(content).get_package(self._model)
+            mf.ChdAdapter(content).get_package(self._model)
         if name == 'fhb':
-            FhbAdapter(content).get_package(self._model)
+            mf.FhbAdapter(content).get_package(self._model)
         if name == 'ghb':
-            GhbAdapter(content).get_package(self._model)
+            mf.GhbAdapter(content).get_package(self._model)
         if name == 'hob':
-            HobAdapter(content).get_package(self._model)
+            mf.HobAdapter(content).get_package(self._model)
         if name == 'lmt':
-            LmtAdapter(content).get_package(self._model)
+            mf.LmtAdapter(content).get_package(self._model)
 
         # MT3D packages
         if name == 'mt':
-            self._model = MtAdapter(content).get_package(self._model)
+            self._model = mt.MtAdapter(content).get_package(self._model)
         if name == 'adv':
-            AdvAdapter(content).get_package(self._model)
+            mt.AdvAdapter(content).get_package(self._model)
         if name == 'btn':
-            BtnAdapter(content).get_package(self._model)
+            mt.BtnAdapter(content).get_package(self._model)
         if name == 'dsp':
-            DspAdapter(content).get_package(self._model)
+            mt.DspAdapter(content).get_package(self._model)
         if name == 'gcg':
-            GcgAdapter(content).get_package(self._model)
+            mt.GcgAdapter(content).get_package(self._model)
         if name == 'lkt':
-            LktAdapter(content).get_package(self._model)
+            mt.LktAdapter(content).get_package(self._model)
         if name == 'phc':
-            PhcAdapter(content).get_package(self._model)
+            mt.PhcAdapter(content).get_package(self._model)
         if name == 'rct':
-            RctAdapter(content).get_package(self._model)
+            mt.RctAdapter(content).get_package(self._model)
         if name == 'sft':
-            SftAdapter(content).get_package(self._model)
+            mt.SftAdapter(content).get_package(self._model)
         if name == 'ssm':
-            SsmAdapter(content).get_package(self._model)
+            mt.SsmAdapter(content).get_package(self._model)
         if name == 'tob':
-            TobAdapter(content).get_package(self._model)
+            mt.TobAdapter(content).get_package(self._model)
         if name == 'uzt':
-            UztAdapter(content).get_package(self._model)
+            mt.UztAdapter(content).get_package(self._model)
 
         # ModPath packages
         if name == 'mp':
-            self._model = MpAdapter(content).get_package()
+            self._model = mp.MpAdapter(content).get_package()
         if name == 'mpbas':
-            self._model = BasAdapter(content).get_package(self._model)
+            self._model = mp.BasAdapter(content).get_package(self._model)
         if name == 'mpsim':
-            self._model = SimAdapter(content).get_package(self._model)
+            self._model = mp.SimAdapter(content).get_package(self._model)
 
         # Seawat packages
         if name == 'swt':
-            self._model = SwtAdapter(content).get_package()
+            self._model = swt.SwtAdapter(content).get_package()
         if name == 'vdf':
-            VdfAdapter(content).get_package(self._model)
+            swt.VdfAdapter(content).get_package(self._model)
         if name == 'vsc':
-            VscAdapter(content).get_package(self._model)
+            swt.VscAdapter(content).get_package(self._model)
 
     def response(self):
         key = 'mf'
         if 'MF' in self._mf_data:
             key = 'MF'
 
-        budgets = ReadBudget(self._mf_data[key]['model_ws'])
-        concentrations = ReadConcentration(self._mf_data[key]['model_ws'])
-        drawdowns = ReadDrawdown(self._mf_data[key]['model_ws'])
-        heads = ReadHead(self._mf_data[key]['model_ws'])
+        budgets = read.ReadBudget(self._mf_data[key]['model_ws'])
+        concentrations = read.ReadConcentration(self._mf_data[key]['model_ws'])
+        drawdowns = read.ReadDrawdown(self._mf_data[key]['model_ws'])
+        heads = read.ReadHead(self._mf_data[key]['model_ws'])
 
         return {
             'budgets': budgets.read_times(),
