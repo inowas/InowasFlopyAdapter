@@ -61,7 +61,7 @@ class InowasModflowReadAdapterTest(unittest.TestCase):
         geometry = instance.model_geometry(4326, 0)
         self.assertEqual(geometry["type"], 'Polygon')
         self.assertEqual(len(geometry["coordinates"][0]), 520)
-        self.assertEqual(geometry["coordinates"][0][0], [-34.87483, -8.073986])
+        self.assertEqual(geometry["coordinates"][0][0], [-34.874831, -8.073991])
 
     def it_returns_model_gid_size_test(self):
         instance = InowasModflowReadAdapter.load('./FlopyAdapter/test/Read/data/test_example_1')
@@ -123,14 +123,16 @@ class InowasModflowReadAdapterTest(unittest.TestCase):
         self.assertIsInstance(instance, InowasModflowReadAdapter)
         wel_boundaries = instance.wel_boundaries(target_epsg=4326)
         self.assertEqual(len(wel_boundaries), 93)
-        self.assertEqual(wel_boundaries[0], {
-            'type': 'wel',
-            'name': 'Well 1',
-            'geometry': {"coordinates": [-34.879084, -8.084038], "type": "Point"},
-            'layers': [0],
-            'sp_values': [-2039.0, -2039.0, -2039.0],
-            'cells': [[217, 31]],
-        })
+        print(wel_boundaries[0])
+        self.assertEqual(wel_boundaries[0],
+                         {
+                             'type': 'wel',
+                             'name': 'Well 1',
+                             'geometry': {"coordinates": [-34.879083, -8.084035], "type": "Point"},
+                             'layers': [0],
+                             'sp_values': [-2039.0, -2039.0, -2039.0], 'cells': [[217, 31]]
+                         }
+                         )
 
     def it_returns_wel_boundaries_of_example_2_test(self):
         instance = InowasModflowReadAdapter.load_with_crs(

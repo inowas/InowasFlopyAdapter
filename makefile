@@ -7,6 +7,9 @@ all:
 	@echo "make publish"
 	@echo "    Installs package in your system."
 
+install: venv
+	pip --version && pip install .
+
 test: venv
 	nosetests
 

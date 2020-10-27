@@ -21,26 +21,38 @@ class ReadBudget:
         except:
             return []
 
-    def read_cumulative_budget(self, totim):
+    def read_budget_by_totim(self, totim=0, incremental=False):
         try:
             mf_list = MfListBudget(self._filename)
-            budget = mf_list.get_data(totim=totim, incremental=False)
+            budget = mf_list.get_data(totim=totim, incremental=incremental)
             values = {}
             for x in budget:
                 param = str(x[2].decode('UTF-8'))
-                values[param] = str(x[1])
+                values[param] = float(str(x[1]))
             return values
         except:
             return []
 
-    def read_incremental_budget(self, totim):
+    def read_budget_by_idx(self, idx=0, incremental=False):
         try:
             mf_list = MfListBudget(self._filename)
-            budget = mf_list.get_data(totim=totim, incremental=True)
+            budget = mf_list.get_data(idx=idx, incremental=incremental)
             values = {}
             for x in budget:
                 param = str(x[2].decode('UTF-8'))
-                values[param] = str(x[1])
+                values[param] = float(str(x[1]))
+            return values
+        except:
+            return []
+
+    def read_budget_by_kstpkper(self, kstpkper=(0, 0), incremental=False):
+        try:
+            mf_list = MfListBudget(self._filename)
+            budget = mf_list.get_data(kstpkper=kstpkper, incremental=incremental)
+            values = {}
+            for x in budget:
+                param = str(x[2].decode('UTF-8'))
+                values[param] = float(str(x[1]))
             return values
         except:
             return []

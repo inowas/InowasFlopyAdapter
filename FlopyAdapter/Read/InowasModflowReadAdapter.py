@@ -7,7 +7,6 @@ import rasterio.features
 import sys
 import utm
 from flopy.discretization import StructuredGrid
-from flopy.modflow import ModflowWel, ModflowChd
 from pyproj import Transformer
 import FlopyAdapter.MfPackages as fpa
 
@@ -225,7 +224,7 @@ class InowasModflowReadAdapter:
                 'start_date_time': str(start_date_time.date()),
                 'nstp': mt.nstp.tolist()[sp_idx],
                 'tsmult': mt.tsmult.tolist()[sp_idx],
-                'steady': mt.steady_state.array[sp_idx]
+                'steady': mt.steady_state[sp_idx]
             })
 
         return {
