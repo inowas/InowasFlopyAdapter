@@ -13,9 +13,14 @@ class HobStatistics:
         self._input_file = os.path.join(model_ws, name) + '.hob.out'
         self._output_file = os.path.join(model_ws, name) + '.hob.stat'
 
-    def write_to_file(self):
+    def write_files(self):
         with open(self._output_file, 'w') as outfile:
-            json.dump(self.calculate(), outfile)
+            try:
+                result = self.calculate()
+            except:
+                result = {"error": 'Error in Hob-Calculation.'}
+            finally:
+                json.dump(result, outfile)
 
     @staticmethod
     def calculate_npf(x, n):
@@ -61,7 +66,7 @@ class HobStatistics:
             rMax=np.max(np.abs(simulated - observed)),
             rMin=np.min(np.abs(simulated - observed)),
             rMean=np.mean(simulated - observed),
-            absRMean=np.mean(np.abs(simulated-observed)),
+            absRMean=np.mean(np.abs(simulated - observed)),
             sse=stats.sem(simulated - observed),
             rmse=np.sqrt(((simulated - observed) ** 2).mean()),
             R=stats.pearsonr(observed, simulated)[0],
