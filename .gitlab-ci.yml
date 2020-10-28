@@ -3,7 +3,7 @@ stages:
   - release
 
 test:
-  image: python:3.8-buster
+  image: inowas/modflow-build:latest
   stage: test
 
   script:
@@ -11,6 +11,7 @@ test:
     - make test
 
 release:
+  image: python:3.8-buster
   stage: release
   script:
     - make install
