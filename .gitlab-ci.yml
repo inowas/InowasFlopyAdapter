@@ -1,0 +1,19 @@
+stages:
+  - test
+  - release
+
+test:
+  image: python:3.8-buster
+  stage: test
+
+  script:
+    - make install
+    - make test
+
+release:
+  stage: release
+  script:
+    - make install
+    - make publish
+  only:
+    - tags
