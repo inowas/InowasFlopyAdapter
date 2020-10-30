@@ -14,10 +14,21 @@ class ReadBudget:
     def read_times(self):
         try:
             mf_list = MfListBudget(self._filename)
-            if mf_list.get_times():
-                return mf_list.get_times()
-            else:
-                return []
+            return mf_list.get_times()
+        except:
+            return []
+
+    def read_idx(self):
+        try:
+            times = self.read_times()
+            return list(range(len(times)))
+        except:
+            return []
+
+    def read_kstpkper(self):
+        try:
+            mf_list = MfListBudget(self._filename)
+            return mf_list.get_kstpkper()
         except:
             return []
 

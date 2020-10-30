@@ -26,100 +26,85 @@ class InowasFlopyReadAdapter:
         self._version = version
         pass
 
-    def read_head(self, totim, layer):
-        head_file = ReadHead(self._projectfolder)
-        return head_file.read_layer(totim=totim, layer=layer)
-
-    def read_head_ts(self, layer, row, column):
-        head_file = ReadHead(self._projectfolder)
-        return head_file.read_ts(layer=layer, row=row, column=column)
-
-    def read_concentration(self, totim, layer):
-        concentration_file = ReadConcentration(self._projectfolder)
-        return concentration_file.read_layer(totim=totim, layer=layer)
-
-    def read_concentration_ts(self, layer, row, column):
-        concentration_file = ReadConcentration(self._projectfolder)
-        return concentration_file.read_ts(layer=layer, row=row, column=column)
-
-    def read_drawdown(self, totim, layer):
-        drawdown_file = ReadDrawdown(self._projectfolder)
-        return drawdown_file.read_layer(totim=totim, layer=layer)
-
-    def read_drawdown_ts(self, layer, row, column):
-        drawdown_file = ReadDrawdown(self._projectfolder)
-        return drawdown_file.read_ts(layer=layer, row=row, column=column)
-
-    def read_cumulative_budget(self, totim):
-        budget_file = ReadBudget(self._projectfolder)
-        return budget_file.read_cumulative_budget(totim=totim)
-
-    def read_incremental_budget(self, totim):
-        budget_file = ReadBudget(self._projectfolder)
-        return budget_file.read_incremental_budget(totim=totim)
-
-    def read_file(self, extension):
-        namfile = ReadFile(self._projectfolder)
-        return namfile.read_file(extension)
-
-    def read_file_list(self):
-        namfile = ReadFile(self._projectfolder)
-        return namfile.read_file_list()
-
     def response(self):
-
         data = None
         request = self._request
 
         if 'budget' in request:
+            budget_file = ReadBudget(self._projectfolder)
             if request['budget']['type'] == 'cumulative':
-                totim = request['budget']['totim']
-                data = self.read_cumulative_budget(totim=totim)
+                if request['budget']['totim']:
+                    totim = request['budget']['totim']
+                    data = budget_file.read_budget_by_totim(totim=totim, incremental=False)
+                if request['budget']['idx']:
+                    idx = request['budget']['idx']
+                    data = budget_file.read_budget_by_idx(idx=idx, incremental=False)
+                if request['budget']['kstpkper']:
+                    kstpkper = request['budget']['kstpkper']
+                    data = budget_file.read_budget_by_kstpkper(kstpkper=kstpkper, incremental=False)
 
             if request['budget']['type'] == 'incremental':
-                totim = self._request['totim']
-                data = self.read_incremental_budget(totim=totim)
+                if request['budget']['totim']:
+                    totim = request['budget']['totim']
+                    data = budget_file.read_budget_by_totim(totim=totim, incremental=True)
+                if request['budget']['idx']:
+                    idx = request['budget']['idx']
+                    data = budget_file.read_budget_by_idx(idx=idx, incremental=True)
+                if request['budget']['kstpkper']:
+                    kstpkper = request['budget']['kstpkper']
+                    data = budget_file.read_budget_by_kstpkper(kstpkper=kstpkper, incremental=True)
 
         if 'layerdata' in request:
             if request['layerdata']['type'] == 'concentration':
+                concentration_file = ReadConcentration(self._projectfolder)
                 totim = request['layerdata']['totim']
                 layer = request['layerdata']['layer']
-                data = self.read_concentration(totim=totim, layer=layer)
+                substance = request['layerdata']['substance']
+                data = concentration_file.read_layer(totim=totim, layer=layer, substance=substance)
 
             if request['layerdata']['type'] == 'drawdown':
+                drawdown_file = ReadDrawdown(self._projectfolder)
                 totim = request['layerdata']['totim']
                 layer = request['layerdata']['layer']
-                data = self.read_drawdown(totim=totim, layer=layer)
+                data = drawdown_file.read_layer(totim=totim, layer=layer)
 
             if request['layerdata']['type'] == 'head':
+                head_file = ReadHead(self._projectfolder)
                 totim = request['layerdata']['totim']
                 layer = request['layerdata']['layer']
-                data = self.read_head(totim=totim, layer=layer)
+                data = head_file.read_layer(totim=totim, layer=layer)
 
         if 'file' in request:
-            data = [self.read_file(request['file'])]
+            extension = request['file']
+            namfile = ReadFile(self._projectfolder)
+            data = [namfile.read_file(extension)]
 
         if 'filelist' in request:
-            data = self.read_file_list()
+            namfile = ReadFile(self._projectfolder)
+            return namfile.read_file_list()
 
         if 'timeseries' in request:
             if request['timeseries']['type'] == 'concentration':
+                concentration_file = ReadConcentration(self._projectfolder)
                 layer = request['timeseries']['layer']
                 row = request['timeseries']['row']
                 column = request['timeseries']['column']
-                data = self.read_concentration_ts(layer=layer, row=row, column=column)
+                substance = request['timeseries']['substance']
+                data = concentration_file.read_ts(layer=layer, row=row, column=column, substance=substance)
 
             if request['timeseries']['type'] == 'drawdown':
+                drawdown_file = ReadDrawdown(self._projectfolder)
                 layer = request['timeseries']['layer']
                 row = request['timeseries']['row']
                 column = request['timeseries']['column']
-                data = self.read_drawdown_ts(layer=layer, row=row, column=column)
+                data = drawdown_file.read_ts(layer=layer, row=row, column=column)
 
             if request['timeseries']['type'] == 'head':
+                head_file = ReadHead(self._projectfolder)
                 layer = request['timeseries']['layer']
                 row = request['timeseries']['row']
                 column = request['timeseries']['column']
-                data = self.read_head_ts(layer=layer, row=row, column=column)
+                data = head_file.read_ts(layer=layer, row=row, column=column)
 
         if data is not None:
             return dict(
