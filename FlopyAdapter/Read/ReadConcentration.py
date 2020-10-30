@@ -22,11 +22,26 @@ class ReadConcentration:
 
         return filename
 
-    def read_times(self):
+    def read_times(self, substance=0):
         try:
-            filename = self.get_concentration_file_from_substance()
+            filename = self.get_concentration_file_from_substance(substance)
             ucn_obj = bf.UcnFile(filename=filename, precision='single')
             return ucn_obj.get_times()
+        except:
+            return []
+
+    def read_idx(self, substance=0):
+        try:
+            times = self.read_times(substance)
+            return list(range(len(times)))
+        except:
+            return []
+
+    def read_kstpkper(self, substance=0):
+        try:
+            filename = self.get_concentration_file_from_substance(substance)
+            ucn_obj = bf.UcnFile(filename=filename, precision='single')
+            return ucn_obj.get_kstpkper()
         except:
             return []
 
@@ -45,7 +60,10 @@ class ReadConcentration:
         except:
             return 0
 
-    def read_layer(self, substance, totim, layer):
+    def read_layer(self, **kwargs):
+        return self.read_layer_by_totim(**kwargs)
+
+    def read_layer_by_totim(self, substance=0, totim=0, layer=0):
         try:
             filename = self.get_concentration_file_from_substance(substance)
             ucn_obj = bf.UcnFile(filename=filename, precision='single')
@@ -59,7 +77,35 @@ class ReadConcentration:
         except:
             return []
 
-    def read_ts(self, substance, layer, row, column):
+    def read_layer_by_idx(self, substance=0, idx=0, layer=0):
+        try:
+            filename = self.get_concentration_file_from_substance(substance)
+            ucn_obj = bf.UcnFile(filename=filename, precision='single')
+            data = ucn_obj.get_data(idx=idx, mflay=layer).tolist()
+            for i in range(len(data)):
+                for j in range(len(data[i])):
+                    data[i][j] = round(data[i][j], 2)
+                    if data[i][j] > 1e29:
+                        data[i][j] = None
+            return data
+        except:
+            return []
+
+    def read_layer_by_kstpkper(self, substance=0, kstpkper=(0, 0), layer=0):
+        try:
+            filename = self.get_concentration_file_from_substance(substance)
+            ucn_obj = bf.UcnFile(filename=filename, precision='single')
+            data = ucn_obj.get_data(kstpkper=kstpkper, mflay=layer).tolist()
+            for i in range(len(data)):
+                for j in range(len(data[i])):
+                    data[i][j] = round(data[i][j], 2)
+                    if data[i][j] > 1e29:
+                        data[i][j] = None
+            return data
+        except:
+            return []
+
+    def read_ts(self, substance=0, layer=0, row=0, column=0):
         try:
             filename = self.get_concentration_file_from_substance(substance)
             ucn_obj = bf.UcnFile(filename=filename, precision='single')
