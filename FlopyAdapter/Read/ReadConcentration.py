@@ -26,7 +26,10 @@ class ReadConcentration:
         try:
             filename = self.get_concentration_file_from_substance(substance)
             ucn_obj = bf.UcnFile(filename=filename, precision='single')
-            return ucn_obj.get_times()
+            times = ucn_obj.get_times()
+            if times is not None:
+                return times
+            return []
         except:
             return []
 
@@ -41,7 +44,10 @@ class ReadConcentration:
         try:
             filename = self.get_concentration_file_from_substance(substance)
             ucn_obj = bf.UcnFile(filename=filename, precision='single')
-            return ucn_obj.get_kstpkper()
+            kstpkper = ucn_obj.get_kstpkper()
+            if kstpkper is not None:
+                return kstpkper
+            return []
         except:
             return []
 
