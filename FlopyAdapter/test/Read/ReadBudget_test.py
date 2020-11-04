@@ -6,7 +6,6 @@ class ReadBudgetTest(unittest.TestCase):
     def it_reads_the_totims_test(self):
         rb = ReadBudget('./FlopyAdapter/test/Read/data/test_read_head_example')
         self.assertIsInstance(rb, ReadBudget)
-        print(rb.read_times())
         self.assertEqual(rb.read_times(), [1.0, 31.0, 59.0, 90.0, 120.0, 151.0])
 
     def it_reads_the_idx_test(self):
@@ -36,6 +35,20 @@ class ReadBudgetTest(unittest.TestCase):
             self.assertEqual(data_totim, rb.read_budget_by_idx(idx=idx))
             self.assertEqual(data_totim, rb.read_budget_by_kstpkper(rb.read_kstpkper()[idx]))
 
+    def it_reads_the_totims_from_empty_budget_file_test(self):
+        rb = ReadBudget('./FlopyAdapter/test/Read/data/test_example_with_no_budget')
+        self.assertIsInstance(rb, ReadBudget)
+        self.assertEqual(rb.read_times(), [])
+
+    def it_reads_the_kstpkper_from_empty_budget_file_test(self):
+        rb = ReadBudget('./FlopyAdapter/test/Read/data/test_example_with_no_budget')
+        self.assertIsInstance(rb, ReadBudget)
+        self.assertEqual(rb.read_kstpkper(), [])
+
+    def it_reads_the_idx_from_empty_budget_file_test(self):
+        rb = ReadBudget('./FlopyAdapter/test/Read/data/test_example_with_no_budget')
+        self.assertIsInstance(rb, ReadBudget)
+        self.assertEqual(rb.read_idx(), [])
 
 if __name__ == "__main__":
     unittest.main()

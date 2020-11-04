@@ -14,7 +14,10 @@ class ReadDrawdown:
     def read_times(self):
         try:
             heads = bf.HeadFile(filename=self._filename, text='drawdown', precision='single')
-            return heads.get_times()
+            times = heads.get_times()
+            if times is not None:
+                return times
+            return []
         except:
             return []
 
@@ -29,7 +32,10 @@ class ReadDrawdown:
     def read_kstpkper(self):
         try:
             heads = bf.HeadFile(filename=self._filename, text='drawdown', precision='single')
-            return heads.get_kstpkper()
+            kstpkper = heads.get_kstpkper()
+            if kstpkper is not None:
+                return kstpkper
+            return []
         except:
             return []
 

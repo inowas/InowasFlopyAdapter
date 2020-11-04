@@ -14,7 +14,11 @@ class ReadBudget:
     def read_times(self):
         try:
             mf_list = MfListBudget(self._filename)
-            return mf_list.get_times()
+            times = mf_list.get_times()
+            if times is not None:
+                return times
+
+            return []
         except:
             return []
 
@@ -28,7 +32,10 @@ class ReadBudget:
     def read_kstpkper(self):
         try:
             mf_list = MfListBudget(self._filename)
-            return mf_list.get_kstpkper()
+            kstpkper = mf_list.get_kstpkper()
+            if kstpkper is not None:
+                return kstpkper
+            return []
         except:
             return []
 
