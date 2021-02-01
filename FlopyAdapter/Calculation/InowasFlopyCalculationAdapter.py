@@ -149,8 +149,6 @@ class InowasFlopyCalculationAdapter:
     def check_model(self):
         if self._model is not None:
             self._model.check()
-        if self._model is not None:
-            self._model.check()
 
     def create_package(self, name, content):
 
