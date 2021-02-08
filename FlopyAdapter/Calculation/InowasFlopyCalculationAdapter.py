@@ -27,7 +27,7 @@ class InowasFlopyCalculationAdapter:
 
     mf_package_order = [
         'mf', 'dis', 'bas', 'bas6',
-        'chd', 'evt', 'drn', 'fhb', 'ghb', 'hob', 'rch', 'riv', 'wel',
+        'chd', 'evt', 'drn', 'fhb', 'ghb', 'hob', 'lak', 'rch', 'riv', 'wel',
         'lpf', 'upw', 'pcg', 'nwt', 'oc', 'lmt', 'lmt6'
     ]
 
@@ -38,7 +38,8 @@ class InowasFlopyCalculationAdapter:
 
     swt_package_order = [
         # Modflow
-        'swt', 'dis', 'bas', 'bas6', 'riv', 'wel', 'rch', 'chd', 'ghb', 'hob',
+        'swt', 'dis', 'bas', 'bas6',
+        'chd', 'evt', 'drn', 'fhb', 'ghb', 'hob', 'lak', 'rch', 'riv', 'wel',
         'lpf', 'upw', 'pcg', 'nwt', 'oc', 'lmt', 'lmt6',
         # Mt3D
         'btn', 'adv', 'dsp', 'gcg', 'ssm', 'lkt', 'phc', 'rct', 'sft', 'tob', 'uzt',
@@ -173,6 +174,8 @@ class InowasFlopyCalculationAdapter:
             mf.OcAdapter(content).get_package(self._model)
         if name == 'riv':
             mf.RivAdapter(content).get_package(self._model)
+        if name == 'lak':
+            mf.LakAdapter(content).get_package(self._model)
         if name == 'wel':
             mf.WelAdapter(content).get_package(self._model)
         if name == 'rch':
