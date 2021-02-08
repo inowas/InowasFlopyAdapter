@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/inowas/InowasFlopyAdapter",
     packages=setuptools.find_packages(),
     install_requires=[
-        'flopy==3.3.1',
+        'flopy==3.3.2',
         'geojson>=2.5',
         'nose>=1.3',
         'numpy>=1.9',
