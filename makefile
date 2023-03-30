@@ -11,7 +11,7 @@ install: venv
 	pip --version && pip install .
 
 test: venv
-	nosetests
+	python -m unittest
 
 publish: venv
 	- python setup.py sdist bdist_wheel && twine upload dist/*

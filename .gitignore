@@ -13,3 +13,6 @@
 /FlopyAdapter/test/Read/data/*/CHD.chk
 /FlopyAdapter/test/Read/data/*/load.log
 /FlopyAdapter/test/Read/data/*/te1.chk
+
+#PyCharm
+/.idea
